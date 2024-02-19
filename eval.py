@@ -204,3 +204,5 @@ with torch.no_grad():
 # python3 eval.py --task='canny' --dataset_name='limingcv/MultiGen-20M_canny_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='image'
 
 # python3 eval.py --task='hed' --dataset_name='limingcv/MultiGen-20M_canny_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='image'
+
+# python3 eval.py --task='openpose' --dataset_name='limingcv/HumanArtv2' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_pose'
