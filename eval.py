@@ -23,9 +23,10 @@ import os
 from cldm.ddim_unicontrol_hacked import DDIMSampler
 import random
 from torchvision.utils import make_grid
-from utils import check_safety
+from utils import check_safety, get_reward_model
 from datasets import load_dataset
 import torchvision.transforms.functional as F
+import cv2
 
 parser = argparse.ArgumentParser(description="args")
 parser.add_argument("--task", type=str, default='canny', choices=['canny', 'hed', 'seg', 'normal', 'depth','openpose', 'imageedit', 'bbox', 'hedsketch', 'outpainting', 'grayscale', 'blur', 'inpainting', 'grayscale'], help='option of task')
@@ -117,9 +118,29 @@ with torch.no_grad():
         if args.save_memory:
             model.low_vram_shift(is_diffusing=False)
 
-        control = data[args.condition_column].convert('RGB')
-        control = F.pil_to_tensor(control.resize((512, 512))) / 255.0
-        control = control.squeeze(0).cuda()
+        if args.task == 'canny':
+            low_threshold = np.random.randint(0, 255)
+            high_threshold = np.random.randint(low_threshold, 255)
+
+            control = data[args.condition_column].convert('RGB').resize((512, 512))
+            control = cv2.Canny(np.array(control), low_threshold, high_threshold)
+            control = F.pil_to_tensor(Image.fromarray(control).convert('RGB'))
+            control = control.squeeze(0).cuda() / 255.0
+        elif args.task == 'hed':
+            annotator = get_reward_model(
+                task="hed",
+                model_path="https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth"
+            )
+            annotator.eval()
+            image = data['image'].convert("RGB").resize((512, 512))
+            image = F.pil_to_tensor(image).unsqueeze(0) / 255.0
+            with torch.no_grad():
+                control = annotator(image).squeeze(0).cuda()
+            control = control.repeat(3, 1, 1)
+        else:
+            control = data[args.condition_column].convert('RGB')
+            control = F.pil_to_tensor(control.resize((512, 512))) / 255.0
+            control = control.squeeze(0).cuda()
 
         if len(control.shape) == 2:
             control = control.unsqueeze(0)
@@ -154,14 +175,32 @@ with torch.no_grad():
         for group_id, x_sample in enumerate(x_checked_image_torch):
             x_sample = 255. * einops.rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
             img = Image.fromarray(x_sample.astype(np.uint8))
+
+            if args.task == 'canny':
+                generated_canny = cv2.Canny(np.array(img), low_threshold, high_threshold)
+                generated_canny = Image.fromarray(generated_canny)
+                generated_canny.save(os.path.join(sample_path, f'group_{group_id}', f"{idx}_canny.png"))
+
+            if args.task == 'hed':
+                generated_hed = F.pil_to_tensor(img).unsqueeze(0) / 255.0
+                with torch.no_grad():
+                    generated_hed = annotator(generated_hed).squeeze(0).cuda()
+
+                generated_hed = F.to_pil_image(generated_hed)
+                generated_hed.save(os.path.join(sample_path, f'group_{group_id}', f"{idx}_hed.png"))
+
             img.save(os.path.join(sample_path, f'group_{group_id}', f"{idx}.png"))
             print(os.path.join(sample_path, f'group_{group_id}', f"{idx}.png"))
             base_count += 1
-        control_img = data[args.condition_column]
+        control_img = F.to_pil_image(control[0])
         control_img.save(os.path.join(sample_path, f"{idx}_{args.task}.png"))
         print(os.path.join(sample_path, f"{idx}_{args.task}.png"))
 
 
-# python3 inference_demo.py --task='seg' --dataset_name='limingcv/Captioned_ADE20K' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_seg'
+# python3 eval.py --task='seg' --dataset_name='limingcv/Captioned_ADE20K' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_seg'
 
-# python3 inference_demo.py --task='depth' --dataset_name='limingcv/MultiGen-20M_depth_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='control_depth'
+# python3 eval.py --task='depth' --dataset_name='limingcv/MultiGen-20M_depth_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='control_depth'
+
+# python3 eval.py --task='canny' --dataset_name='limingcv/MultiGen-20M_canny_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='image'
+
+# python3 eval.py --task='hed' --dataset_name='limingcv/MultiGen-20M_canny_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='image'
