@@ -101,7 +101,7 @@ a_prompt = 'best quality, extremely detailed'
 # Inference loop
 with torch.no_grad():
     for idx, data in enumerate(dataset):
-        print("Processing {idx} sample")
+        print(f"Processing {idx} sample")
 
         prompt = data[args.prompt_column]
 
