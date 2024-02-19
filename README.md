@@ -347,3 +347,4 @@ ControlNet https://github.com/lllyasviel/ControlNet
 
 StyleGAN3 https://github.com/NVlabs/stylegan3
     
+# unicontrol
