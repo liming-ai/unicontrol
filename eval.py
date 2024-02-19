@@ -76,13 +76,6 @@ path_meta= "data/"
 task_name = task
 path_json = "data/" + task_name + ".json"
 
-target_list = []
-with jsonlines.open(Path( path_json)) as reader:
-    for ll in reader:
-        target_list.append(ll[control_key].split('/')[1])
-
-print(f"Length of target list is {len(target_list)}")
-
 model.eval()
 
 dataset = load_dataset(args.dataset_name, cache_dir=args.cache_dir, split=args.split)
@@ -108,6 +101,7 @@ a_prompt = 'best quality, extremely detailed'
 # Inference loop
 with torch.no_grad():
     for idx, data in enumerate(dataset):
+        print("Processing {idx} sample")
 
         prompt = data[args.prompt_column]
 
@@ -206,3 +200,5 @@ with torch.no_grad():
 # python3 eval.py --task='hed' --dataset_name='limingcv/MultiGen-20M_canny_eval' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='text' --condition_column='image'
 
 # python3 eval.py --task='openpose' --dataset_name='limingcv/HumanArtv2' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_pose'
+
+# python3 eval.py --task='openpose' --dataset_name='limingcv/Captioned_COCOPose' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_pose'
