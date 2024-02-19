@@ -98,10 +98,11 @@ task_to_instruction = {
 }
 
 a_prompt = 'best quality, extremely detailed'
+len_dataset = len(dataset)
 # Inference loop
 with torch.no_grad():
     for idx, data in enumerate(dataset):
-        print(f"Processing {idx} sample")
+        print(f"Processing {idx}/{len_dataset} sample")
 
         prompt = data[args.prompt_column]
 
