@@ -162,8 +162,8 @@ with torch.no_grad():
         x_samples = x_samples.cpu().permute(0, 2, 3, 1).numpy()
 
         for local_id in range(num_samples):
-            if not os.path.exists(os.path.join(sample_path, f'group_{local_id}')):
-                os.makedirs(os.path.join(sample_path, f'group_{local_id}'))
+            if not os.path.exists(os.path.join(sample_path, args.dataset_name, f'group_{local_id}')):
+                os.makedirs(os.path.join(sample_path, args.dataset_name, f'group_{local_id}'))
 
         x_checked_image, has_nsfw_concept = check_safety(x_samples)
         x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
@@ -184,12 +184,12 @@ with torch.no_grad():
                 generated_hed = F.to_pil_image(generated_hed)
                 generated_hed.save(os.path.join(sample_path, f'group_{group_id}', f"{idx}_hed.png"))
 
-            img.save(os.path.join(sample_path, f'group_{group_id}', f"{idx}.png"))
-            print(os.path.join(sample_path, f'group_{group_id}', f"{idx}.png"))
+            img.save(os.path.join(sample_path, args.dataset_name, f'group_{group_id}', f"{idx}.png"))
+            print(os.path.join(sample_path, args.dataset_name, f'group_{group_id}', f"{idx}.png"))
             base_count += 1
         control_img = F.to_pil_image(control[0])
-        control_img.save(os.path.join(sample_path, f"{idx}_{args.task}.png"))
-        print(os.path.join(sample_path, f"{idx}_{args.task}.png"))
+        control_img.save(os.path.join(sample_path, args.dataset_name, f"{idx}_{args.task}.png"))
+        print(os.path.join(sample_path, args.dataset_name, f"{idx}_{args.task}.png"))
 
 
 # python3 eval.py --task='seg' --dataset_name='limingcv/Captioned_ADE20K' --cache_dir='data/huggingface_datasets' --split='validation' --prompt_column='prompt' --condition_column='control_seg'
