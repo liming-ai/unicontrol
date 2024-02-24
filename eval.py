@@ -104,6 +104,9 @@ with torch.no_grad():
     for idx, data in enumerate(dataset):
         print(f"Processing {idx}/{len_dataset} sample")
 
+        if os.path.exists(os.path.join(sample_path, args.dataset_name, f"{idx}_{args.task}.png")):
+            continue
+
         prompt = data[args.prompt_column]
 
         if seed == -1:
